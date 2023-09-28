@@ -58,4 +58,31 @@ export class NotificationController {
       message,
     );
   }
+
+  @Post('subscribe')
+  @HttpCode(200)
+  async subscribeTopic(
+    @Body()
+    data: {
+      deviceToken: string;
+      topic: string;
+    },
+  ) {
+    const { deviceToken, topic } = data;
+    return this.notificationService.subscribeTopic(deviceToken, topic);
+  }
+
+  @Post('publish')
+  @HttpCode(200)
+  async publishTopic(
+    @Body()
+    data: {
+      topic: string;
+      message: IPayloadPushNotification;
+      type: PushNotificationEnum;
+    },
+  ) {
+    const { type, message, topic } = data;
+    return this.notificationService.publishTopic(topic, type, message);
+  }
 }

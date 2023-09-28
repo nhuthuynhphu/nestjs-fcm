@@ -58,12 +58,13 @@ export class NotificationService {
 
       return response.data;
     } catch (error) {
-      if (error.response) {
-        this.logger.error(
-          `[deviceId]Error pushNotification: `,
-          error?.response?.data,
-        );
-      }
+      // if (error.response) {
+      //   this.logger.error(
+      //     `[deviceId]Error pushNotification: `,
+      //     error?.response?.data,
+      //   );
+      // }
+      throw new Error(error?.response?.data || 'Error');
     }
   };
 
@@ -88,7 +89,81 @@ export class NotificationService {
       });
       return response.data;
     } catch (error) {
-      this.logger.error(`Error pushNotification: `, error?.response?.data);
+      // this.logger.error(`Error pushNotification: `, error?.response?.data);
+      throw new Error(error?.response?.data || 'Error');
+    }
+  };
+
+  subscribeTopic = async (deviceToken: string, topic: string) => {
+    try {
+      const response = await axios({
+        method: 'POST',
+        url: `https://iid.googleapis.com/iid/v1/${deviceToken}/rel/topics/${topic}`,
+        data: JSON.stringify({}),
+        headers: {
+          Authorization: `key=${process.env.FIREBASE_FCM_SERVER_KEY}`,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      // this.logger.error(`Error pushNotification: `, error?.response?.data);
+      throw new Error(error?.response?.data || 'Error');
+    }
+  };
+
+  unsubscribeTopic = async (deviceTokens: string, topic: string) => {
+    try {
+      const response = await axios({
+        method: 'POST',
+        url: `https://iid.googleapis.com/iid/v1:batchRemove`,
+        data: JSON.stringify({
+          to: `/topics/${topic}`,
+          registration_tokens: deviceTokens,
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `key=${process.env.FIREBASE_FCM_SERVER_KEY}`,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      // this.logger.error(`Error pushNotification: `, error?.response?.data);
+      throw new Error(error?.response?.data || 'Error');
+    }
+  };
+
+  publishTopic = async (
+    topic: string,
+    type: PushNotificationEnum,
+    payload: IPayloadPushNotification,
+  ) => {
+    try {
+      const notificationPayload = {
+        sound: 'default',
+        type,
+        title: payload.title,
+        body: payload.body,
+        badge: payload.badge,
+        priority: 'high',
+      };
+      const fcmBody = {
+        topic, // Specify the topic to which you want to publish
+        notification: notificationPayload,
+        data: payload.data,
+      };
+      const response = await axios({
+        method: 'POST',
+        url: process.env.FIREBASE_FCM_URI,
+        data: JSON.stringify(fcmBody),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `key=${process.env.FIREBASE_FCM_SERVER_KEY}`,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      // this.logger.error(`Error pushNotification: `, error?.response?.data);
+      throw new Error(error?.response?.data || 'Error');
     }
   };
 }
